@@ -7,13 +7,15 @@
     showActions = true,
     ondelete,
     onedit,
-    ontogglefavorite
+    ontogglefavorite,
+    onrate
   }: {
     movie: Movie;
     showActions?: boolean;
     ondelete?: (id: string) => void;
     onedit?: (movie: Movie) => void;
     ontogglefavorite?: (id: string) => void;
+    onrate?: (id: string, rating: number) => void;
   } = $props();
 
   // Handlers: ejecutan callbacks del padre directamente
@@ -27,6 +29,10 @@
 
   function handleToggleFavorite() {
     ontogglefavorite?.(movie.id);
+  }
+
+  function handleRate(rating: number) {
+    onrate?.(movie.id, rating);
   }
 </script>
 
@@ -61,7 +67,27 @@
       {/if}
     </header>
 
-    <div class="mt-auto text-sm text-slate-500">
+    <!-- Valoración -->
+    {#if showActions}
+      <div class="mt-2 flex items-center gap-1">
+        {#each [1, 2, 3, 4, 5] as star}
+          <button
+            type="button"
+            class="rounded text-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            onclick={() => handleRate(star)}
+            title={`Puntuar con ${star} estrellas`}
+          >
+            {#if (movie.rating ?? 0) >= star}
+              <span class="text-yellow-400">★</span>
+            {:else}
+              <span class="text-gray-300">☆</span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
+
+    <div class="text-sm text-slate-500">
       {#if movie.year}
         <span>Año: {movie.year}</span>
       {/if}
