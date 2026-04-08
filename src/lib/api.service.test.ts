@@ -183,62 +183,89 @@ describe('API Service - Autenticación', () => {
   // ==========================================
   // GRUPO: Peticiones autenticadas
   // ==========================================
-  describe('Peticiones con autenticación', () => {
-    it('debería incluir token en el header Authorization', async () => {
-      // ARRANGE
-      const token = 'valid-token';
-      authToken.set(token);
+describe('Peticiones con autenticación', () => {
+  it('debería incluir token en el header Authorization', async () => {
+    // ARRANGE
+    const token = 'valid-token';
+    authToken.set(token);
 
-      // Mock de respuesta de películas
-      (globalThis.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        headers: {
-          get: (name: string) => name === 'content-type' ? 'application/json' : null
-        },
-        json: async () => ([])
-      });
-
-      // ACT
-      await api.getMovies();
-
-      // ASSERT
-      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-      
-      const callArgs = (globalThis.fetch as any).mock.calls[0];
-      expect(callArgs[0]).toBe('http://localhost:3000/api/movies');
-      expect(callArgs[1].method).toBe('GET');
-      
-      // Verificar que el header Authorization está presente
-      const headers = callArgs[1].headers as Headers;
-      expect(headers.get('Authorization')).toBe(`Bearer ${token}`);
+    // Mock de respuesta de películas
+    (globalThis.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) => name === 'content-type' ? 'application/json' : null
+      },
+      json: async () => ([])
     });
 
-    it('debería fallar si no hay token (401)', async () => {
-      // ARRANGE
-      authToken.clear();
+    // ACT
+    await api.getMovies();
 
-      // Mock de error 401
-      (globalThis.fetch as any).mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        headers: {
-          get: (name: string) => name === 'content-type' ? 'application/json' : null
-        },
-        json: async () => ({ error: 'No autorizado' })
-      });
+    // ASSERT
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 
-      // ACT & ASSERT
-      try {
-        await api.getMovies();
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        expect((error as ApiError).status).toBe(401);
-        expect((error as ApiError).message).toBe('No autorizado');
-      }
-    });
+    const callArgs = (globalThis.fetch as any).mock.calls[0];
+    expect(callArgs[0]).toBe('http://localhost:3000/api/movies');
+    expect(callArgs[1].method).toBe('GET');
+
+    // Verificar que el header Authorization está presente
+    const headers = callArgs[1].headers as Headers;
+    expect(headers.get('Authorization')).toBe(`Bearer ${token}`);
   });
+
+  it('debería enviar rating en la petición PATCH', async () => {
+    // ARRANGE
+    const token = 'valid-token';
+    authToken.set(token);
+    const movieId = 'test-id';
+    const rating = 4;
+
+    (globalThis.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) => name === 'content-type' ? 'application/json' : null
+      },
+      json: async () => ({ id: movieId, rating })
+    });
+
+    // ACT
+    await api.rateMovie(movieId, rating);
+
+    // ASSERT
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    const callArgs = (globalThis.fetch as any).mock.calls[0];
+    expect(callArgs[0]).toBe(`http://localhost:3000/api/movies/${movieId}/rating`);
+    expect(callArgs[1].method).toBe('PATCH');
+    expect(callArgs[1].body).toBe(JSON.stringify({ rating }));
+  });
+
+  it('debería fallar si no hay token (401)', async () => {
+    // ARRANGE
+    authToken.clear();
+
+    // Mock de error 401
+    (globalThis.fetch as any).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      headers: {
+        get: (name: string) => name === 'content-type' ? 'application/json' : null
+      },
+      json: async () => ({ error: 'No autorizado' })
+    });
+
+    // ACT & ASSERT
+    try {
+      await api.getMovies();
+      expect(true).toBe(false);
+    } catch (error) {
+      expect(error).toBeInstanceOf(ApiError);
+      expect((error as ApiError).status).toBe(401);
+      expect((error as ApiError).message).toBe('No autorizado');
+    }
+  });
+});
 
   // ==========================================
   // GRUPO: Favoritos

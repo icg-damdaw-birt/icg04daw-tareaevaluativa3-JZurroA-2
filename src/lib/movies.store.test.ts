@@ -18,6 +18,7 @@ vi.mock('./api.service', () => ({
     updateMovie: vi.fn(),
     deleteMovie: vi.fn(),
     toggleFavorite: vi.fn(),
+    rateMovie: vi.fn(),
   }
 }));
 
@@ -245,6 +246,34 @@ describe('Movies Store (Svelte 5 Runes)', () => {
       vi.mocked(api.toggleFavorite).mockRejectedValue(new Error('Network error'));
 
       const ok = await moviesStore.toggleFavorite('1');
+
+      expect(ok).toBe(false);
+      expect(moviesStore.error).toBe('Network error');
+      expect(moviesStore.mutating).toBe(false);
+    });
+  });
+  // ─── rateMovie ───────────────────────────────────────────────
+  describe('rateMovie()', () => {
+    it('debería actualizar el rating de una película en el store', async () => {
+      vi.mocked(api.getMovies).mockResolvedValue([...mockMovies]);
+      await moviesStore.loadMovies();
+
+      const ratedMovie = { ...mockMovies[0], rating: 4 };
+      vi.mocked(api.rateMovie).mockResolvedValue(ratedMovie);
+
+      const ok = await moviesStore.rateMovie('1', 4);
+
+      expect(api.rateMovie).toHaveBeenCalledWith('1', 4);
+      expect(ok).toBe(true);
+
+      const movie = moviesStore.movies.find(m => m.id === '1');
+      expect(movie?.rating).toBe(4);
+    });
+
+    it('debería manejar error al actualizar rating', async () => {
+      vi.mocked(api.rateMovie).mockRejectedValue(new Error('Network error'));
+
+      const ok = await moviesStore.rateMovie('1', 4);
 
       expect(ok).toBe(false);
       expect(moviesStore.error).toBe('Network error');
